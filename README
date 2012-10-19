@@ -18,13 +18,13 @@ take this 'health colour' and map it directly to a Nagios check status
 (OK, WARNING, or CRITICAL, respectively).  While that approach will work 
 (insofar as it will report a problem that ElasticSearch has detected), 
 an operator is going to need more information to narrow a real problem 
-down.  ('*Why* is my cluster yellow?')
+down to its root cause.  ('*Why* is my cluster yellow?')
 
 This monitoring plugin requests detailed operational data from 
 ElasticSearch and uses that information to derive its own 'health 
-colour'.  If our health colour concurs with ES' health colour, then we 
-can be reasonably sure we know what is wrong with the cluster and may 
-report that problem to the operator.
+colour'.  If our health colour concurs with ElasticSearch's health 
+colour, then we can be reasonably sure we know what is wrong with the 
+cluster and may report that problem to the operator.
 
 
 [ElasticSearch]: http://www.elasticsearch.org/
