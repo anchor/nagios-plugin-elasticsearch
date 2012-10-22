@@ -45,13 +45,16 @@ class ElasticSearchCheck(NagiosCheck):
 
         self.health = HEALTH['green']
 
-        self.add_option('a', 'location', 'location', "A comma-"
-                        "separated list of attributes that "
-                        "ElasticSearch should be using in its location-"
-                        "aware shard allocator.  If this option is "
-                        "supplied, additional checks are carried out "
-                        "to ensure that primary and replica shards are "
-                        "not stored in the same failure domain.")
+        self.add_option('f', 'failure-domain', 'failure_domain', "A "
+                        "comma-separated list of ElasticSearch "
+                        "attributes that make up your cluster's "
+                        "failure domain.  This should be the same list "
+                        "of attributes that ElasticSearch's location-"
+                        "aware shard allocator has been configured "
+                        "with.  If this option is supplied, additional "
+                        "checks are carried out to ensure that primary "
+                        "and replica shards are not stored in the same "
+                        "failure domain.")
 
         self.add_option('H', 'host', 'host', "Hostname or network "
                         "address to probe.  The ElasticSearch API "
@@ -66,9 +69,10 @@ class ElasticSearchCheck(NagiosCheck):
         host = getattr(opts, 'host') or "localhost"
         port = int(getattr(opts, 'port') or '9200')
 
-        loc_attrs = []
-        if isinstance(opts.location, str) and len(opts.location) > 0:
-            loc_attrs.extend(opts.location.split(","))
+        failure_domain = []
+        if (isinstance(opts.failure_domain, str) and
+            len(opts.failure_domain) > 0):
+            failure_domain.extend(opts.failure_domain.split(","))
 
         #
         # Data retrieval
@@ -142,9 +146,9 @@ class ElasticSearchCheck(NagiosCheck):
             esid_node_map[n] = node
             node_esid_map[node] = n
 
-            if len(loc_attrs) > 0:
+            if len(failure_domain) > 0:
                 try:
-                    loc = tuple(map(lambda a: attrs[a], loc_attrs))
+                    loc = tuple(map(lambda a: attrs[a], failure_domain))
                 except KeyError, e:
                     missing_attr = e.args[0]
                     raise Status('warning',
@@ -189,9 +193,6 @@ class ElasticSearchCheck(NagiosCheck):
                 for s in idx_shards[d]:
                     shard = ESShard(SHARD_STATE[s['state'].upper()])
 
-                    loc = node_location_map[esid_node_map[s['node']]]
-                    shard_location_map[shard] = loc
-
                     if s['primary']:
                         primary = shard
                     else:
@@ -202,6 +203,10 @@ class ElasticSearchCheck(NagiosCheck):
                     if node not in node_shard_map:
                         node_shard_map[node] = []
                     node_shard_map[node].append(shard)
+
+                    if len(failure_domain) > 0:
+                        loc = node_location_map[esid_node_map[s['node']]]
+                        shard_location_map[shard] = loc
 
                 index_primary_map[idx][int(d)] = primary
 
@@ -217,8 +222,8 @@ class ElasticSearchCheck(NagiosCheck):
         def dict2perfdata(base, metrics):
             for metric in metrics:
                 if len(metric) == 2:
-            	    label, path = metric
-            	    unit = ""
+                    label, path = metric
+                    unit = ""
                 elif len(metric) > 2:
                     label, path, unit = metric
                 else:
@@ -245,8 +250,8 @@ class ElasticSearchCheck(NagiosCheck):
         def other2perfdata(metrics):
             for metric in metrics:
                 if len(metric) == 2:
-            	    label, value = metric
-            	    unit = ""
+                    label, value = metric
+                    unit = ""
                 elif len(metric) > 2:
                     label, value, unit = metric
                 else:
@@ -348,35 +353,36 @@ class ElasticSearchCheck(NagiosCheck):
         # as their primary.
         downgraded = False
 
-        for idx_name, idx in name_index_map.iteritems():
-            for shard_no in range(idx.n_shards):
-                loc_redundancy = set()
-                vulnerable_shards = set()
+        if len(failure_domain) > 0:
+            for idx_name, idx in name_index_map.iteritems():
+                for shard_no in range(idx.n_shards):
+                    loc_redundancy = set()
+                    vulnerable_shards = set()
 
-                primary = index_primary_map[idx][shard_no]
+                    primary = index_primary_map[idx][shard_no]
 
-                if primary is None:
-                    continue
+                    if primary is None:
+                        continue
 
-                loc_redundancy.add(shard_location_map[primary])
-                vulnerable_shards.add(primary)
+                    loc_redundancy.add(shard_location_map[primary])
+                    vulnerable_shards.add(primary)
 
-                for replica in primary_replica_map[primary]:
-                    loc_redundancy.add(shard_location_map[replica])
-                    vulnerable_shards.add(replica)
+                    for replica in primary_replica_map[primary]:
+                        loc_redundancy.add(shard_location_map[replica])
+                        vulnerable_shards.add(replica)
 
-                # Suppress the problem unless at least one of the 
-                # vulnerable shards is on this data node.
-                my_shards = set(node_shard_map[esid_node_map[myid]])
-                if vulnerable_shards.isdisjoint(my_shards):
-                    continue
+                    # Suppress the problem unless at least one of the 
+                    # vulnerable shards is on this data node.
+                    my_shards = set(node_shard_map[esid_node_map[myid]])
+                    if vulnerable_shards.isdisjoint(my_shards):
+                        continue
 
-                if len(loc_redundancy) == 1:
-                    downgraded |= self.downgrade_health(YELLOW)
-                    loc = ",".join(list(loc_redundancy)[0])
-                    detail.append("Index '%s' shard %d only exists in "
-                                  "location '%s'" %
-                                  (idx_name, shard_no, loc))
+                    if len(loc_redundancy) == 1:
+                        downgraded |= self.downgrade_health(YELLOW)
+                        loc = ",".join(list(loc_redundancy)[0])
+                        detail.append("Index '%s' shard %d only exists "
+                                      "in location '%s'" %
+                                      (idx_name, shard_no, loc))
 
         if downgraded:
             msg = ("One or more index shards are not being replicated "
