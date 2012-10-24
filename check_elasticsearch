@@ -198,15 +198,16 @@ class ElasticSearchCheck(NagiosCheck):
                     else:
                         replicas.append(shard)
 
-                    node = esid_node_map[s['node']]
+                    if s['state'] != 'UNASSIGNED':
+                        node = esid_node_map[s['node']]
 
-                    if node not in node_shard_map:
-                        node_shard_map[node] = []
-                    node_shard_map[node].append(shard)
+                        if node not in node_shard_map:
+                            node_shard_map[node] = []
+                        node_shard_map[node].append(shard)
 
-                    if len(failure_domain) > 0:
-                        loc = node_location_map[esid_node_map[s['node']]]
-                        shard_location_map[shard] = loc
+                        if len(failure_domain) > 0:
+                            loc = node_location_map[esid_node_map[s['node']]]
+                            shard_location_map[shard] = loc
 
                 index_primary_map[idx][int(d)] = primary
 
