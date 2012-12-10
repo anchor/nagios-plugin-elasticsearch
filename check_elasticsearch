@@ -38,7 +38,7 @@ class ESNode(object):
         self.attributes = attributes
 
 class ElasticSearchCheck(NagiosCheck):
-    version = '0.1.0'
+    version = '0.1.1'
 
     def __init__(self):
         NagiosCheck.__init__(self)
@@ -365,11 +365,19 @@ class ElasticSearchCheck(NagiosCheck):
                     if primary is None:
                         continue
 
-                    loc_redundancy.add(shard_location_map[primary])
+                    try:
+                        loc = shard_location_map[primary]
+                    except KeyError:
+                        continue
+                    loc_redundancy.add(loc)
                     vulnerable_shards.add(primary)
 
                     for replica in primary_replica_map[primary]:
-                        loc_redundancy.add(shard_location_map[replica])
+                        try:
+                            loc = shard_location_map[replica]
+                        except KeyError:
+                            continue
+                        loc_redundancy.add(loc)
                         vulnerable_shards.add(replica)
 
                     # Suppress the problem unless at least one of the 
