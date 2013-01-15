@@ -360,6 +360,12 @@ class ElasticSearchCheck(NagiosCheck):
 
         if len(failure_domain) > 0:
             for idx_name, idx in name_index_map.iteritems():
+
+                # Suppress this test if the index has not been 
+                # configured with replicas.
+                if idx.n_replicas == 0:
+                    continue
+
                 for shard_no in range(idx.n_shards):
                     loc_redundancy = set()
                     vulnerable_shards = set()
