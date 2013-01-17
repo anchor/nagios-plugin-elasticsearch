@@ -138,7 +138,7 @@ class ElasticSearchCheck(NagiosCheck):
         #     - esid_node_map
         #     - name_node_map
         #     - node_esid_map
-        #     - node_location_map
+        #     - node_location_map (data nodes only)
         #
         nodes = es_state['nodes']
         for n in nodes:
@@ -154,13 +154,17 @@ class ElasticSearchCheck(NagiosCheck):
                 try:
                     loc = tuple(map(lambda a: attrs[a], failure_domain))
                 except KeyError, e:
-                    missing_attr = e.args[0]
-                    raise Status('warning',
-                                 ("Node '%s' missing location "
-                                  "attribute '%s'" %
-                                  (name, missing_attr),))
-
-                node_location_map[node] = loc
+                    # Nodes that do not store shards (e.g.: 'client' 
+                    # nodes) cannot be expected to have been configured 
+                    # with locational attributes.
+                    if 'data' not in attrs or booleanise(attrs['data']):
+                        missing_attr = e.args[0]
+                        raise Status('warning',
+                                     ("Node '%s' missing location "
+                                      "attribute '%s'" %
+                                      (name, missing_attr),))
+                finally:
+                    node_location_map[node] = loc
 
         # Build index maps:
         #
@@ -427,6 +431,26 @@ class ElasticSearchCheck(NagiosCheck):
             self.health = new_health
             return True
         return False
+
+def booleanise(b):
+    """Normalise a 'stringified' Boolean to a proper Python Boolean.
+
+    ElasticSearch has a habit of returning "true" and "false" in its 
+    JSON responses when it should be returning `true` and `false`.  If 
+    `b` looks like a stringified Boolean true, return True.  If `b` 
+    looks like a stringified Boolean false, return False.
+
+    If we don't know what `b` is supposed to represent, return it back 
+    to the caller.
+
+    """
+    s = str(b)
+    if s.lower() == "true":
+        return True
+    if s.lower() == "false":
+        return False
+
+    return b
 
 def get_json(uri):
     try:
