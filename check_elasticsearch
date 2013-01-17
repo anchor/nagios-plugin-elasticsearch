@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-from nagioscheck import NagiosCheck, PerformanceMetric, Status
+from nagioscheck import NagiosCheck, UsageError
+from nagioscheck import PerformanceMetric, Status
 import urllib2
 
 try:
@@ -42,7 +43,7 @@ class ESNode(object):
         self.attributes = attributes
 
 class ElasticSearchCheck(NagiosCheck):
-    version = '0.1.1'
+    version = '0.2.0'
 
     def __init__(self):
         NagiosCheck.__init__(self)
@@ -65,18 +66,34 @@ class ElasticSearchCheck(NagiosCheck):
                         "should be listening here.  Defaults to "
                         "'localhost'.")
 
+        self.add_option('m', 'master-nodes', 'master_nodes', "Issue a "
+                        "warning if the number of master-eligible "
+                        "nodes in the cluster drops below this "
+                        "number.  By default, do not monitor the "
+                        "number of nodes in the cluster.")
+
         self.add_option('p', 'port', 'port', "TCP port to probe.  "
                         "The ElasticSearch API should be listening "
                         "here.  Defaults to 9200.")
 
     def check(self, opts, args):
-        host = getattr(opts, 'host') or "localhost"
-        port = int(getattr(opts, 'port') or '9200')
+        host = opts.host or "localhost"
+        port = int(opts.port or '9200')
 
         failure_domain = []
         if (isinstance(opts.failure_domain, str) and
             len(opts.failure_domain) > 0):
             failure_domain.extend(opts.failure_domain.split(","))
+
+        if opts.master_nodes is not None:
+            try:
+                if int(opts.master_nodes) < 1:
+                    raise ValueError("'master_nodes' must be greater "
+                                     "than zero")
+            except ValueError:
+                raise UsageError("Argument to -m/--master-nodes must "
+                                 "be a natural number")
+
 
         #
         # Data retrieval
@@ -92,15 +109,6 @@ class ElasticSearchCheck(NagiosCheck):
 
         their_health = HEALTH[es_health['status'].lower()]
 
-        n_nodes = es_health['number_of_nodes']
-        n_dnodes = es_health['number_of_data_nodes']
-        n_active_shards = es_health['active_shards']
-        n_relocating_shards = es_health['relocating_shards']
-        n_initialising_shards = es_health['initializing_shards']
-        n_unassigned_shards = es_health['unassigned_shards']
-        n_shards = (n_active_shards + n_relocating_shards +
-                    n_initialising_shards + n_unassigned_shards)
-
         # Request cluster 'state'.  This be where all the meat at, yo.  
         # Here, we can see a list of all nodes, indexes, and shards in 
         # the cluster.  This response will also contain a map detailing 
@@ -115,6 +123,42 @@ class ElasticSearchCheck(NagiosCheck):
                              'stats?all=true' % (host, port))
 
         myid = es_stats['nodes'].keys()[0]
+
+        n_nodes  = es_health['number_of_nodes']
+        n_dnodes = es_health['number_of_data_nodes']
+
+        # Unlike n_dnodes (the number of data nodes), we must compute 
+        # the number of master-eligible nodes ourselves.
+        n_mnodes = 0
+        for esid in es_state['nodes']:
+            master_elig = True
+
+            # ES will never elect 'client' nodes as masters.
+            try:
+                master_elig = not (booleanise(
+                                   es_state['nodes'][esid]['attributes']
+                                           ['client']))
+            except KeyError, e:
+                if e.args[0] != 'client':
+                    raise
+
+            try:
+                master_elig = (booleanise(
+                               es_state['nodes'][esid]['attributes']
+                                       ['master']))
+            except KeyError, e:
+                if e.args[0] != 'master':
+                    raise
+
+            if master_elig:
+                n_mnodes += 1
+
+        n_active_shards       = es_health['active_shards']
+        n_relocating_shards   = es_health['relocating_shards']
+        n_initialising_shards = es_health['initializing_shards']
+        n_unassigned_shards   = es_health['unassigned_shards']
+        n_shards = (n_active_shards + n_relocating_shards +
+                    n_initialising_shards + n_unassigned_shards)
 
         #
         # Map construction
@@ -276,14 +320,15 @@ class ElasticSearchCheck(NagiosCheck):
         # cluster nodes with this plugin, they should all report the 
         # same figures for these labels.  Not ideal, but 'tis better to 
         # graph this data multiple times than not graph it at all.
-        metrics = [["cluster_nodes",               n_nodes],
-                   ["cluster_data_nodes",          n_dnodes],
-                   ["cluster_active_shards",       n_active_shards],
-                   ["cluster_relocating_shards",   n_relocating_shards],
+        metrics = [["cluster_nodes",                 n_nodes],
+                   ["cluster_master_eligible_nodes", n_mnodes],
+                   ["cluster_data_nodes",            n_dnodes],
+                   ["cluster_active_shards",         n_active_shards],
+                   ["cluster_relocating_shards",     n_relocating_shards],
                    ["cluster_initialising_shards",
                     n_initialising_shards],
-                   ["cluster_unassigned_shards",   n_unassigned_shards],
-                   ["cluster_total_shards",        n_shards]]
+                   ["cluster_unassigned_shards",     n_unassigned_shards],
+                   ["cluster_total_shards",          n_shards]]
 
         other2perfdata(metrics)
 
@@ -357,6 +402,28 @@ class ElasticSearchCheck(NagiosCheck):
         if downgraded:
             msg = ("One or more indexes are missing replica shards.  "
                    "Use -vv to list them.")
+
+        # Assertion:  You have as many master-eligible nodes in the 
+        # cluster as you think you ought to.
+        #
+        # To be of any use in detecting split-brains, this value must be 
+        # set to the *total* number of master-eligible nodes in the 
+        # cluster, not whatever you set in ElasticSearch's 
+        # 'discovery.zen.minimum_master_nodes' configuration parameter.  
+        # (See ES issue #2488.)  Of course, this will trip whenever a 
+        # node is taken down for maintenance, so we raise only a warning 
+        # -- not a critical -- status condition.
+        downgraded = False
+
+        if opts.master_nodes is not None:
+            if n_mnodes < int(opts.master_nodes):
+                downgraded |= self.downgrade_health(YELLOW)
+                detail.append("Expected to find %d master-eligible "
+                              "nodes in the cluster but only found %d" %
+                              (int(opts.master_nodes), n_mnodes))
+
+        if downgraded:
+            msg = ("Missing master-eligible nodes")
 
         # Assertion:  Replicas are not stored in the same failure domain 
         # as their primary.
@@ -440,8 +507,7 @@ def booleanise(b):
     `b` looks like a stringified Boolean true, return True.  If `b` 
     looks like a stringified Boolean false, return False.
 
-    If we don't know what `b` is supposed to represent, return it back 
-    to the caller.
+    Raise ValueError if we don't know what `b` is supposed to represent.
 
     """
     s = str(b)
@@ -450,7 +516,7 @@ def booleanise(b):
     if s.lower() == "false":
         return False
 
-    return b
+    raise ValueError("I don't know how to coerce %r to a bool" % b)
 
 def get_json(uri):
     try:
