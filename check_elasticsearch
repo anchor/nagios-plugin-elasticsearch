@@ -195,8 +195,10 @@ class ElasticSearchCheck(NagiosCheck):
             node_esid_map[node] = n
 
             if len(failure_domain) > 0:
+                node_location_map[node] = tuple()
                 try:
-                    loc = tuple(map(lambda a: attrs[a], failure_domain))
+                    node_location_map[node] = (
+                        tuple(map(lambda a: attrs[a], failure_domain)))
                 except KeyError, e:
                     # Nodes that do not store shards (e.g.: 'client' 
                     # nodes) cannot be expected to have been configured 
@@ -207,8 +209,6 @@ class ElasticSearchCheck(NagiosCheck):
                                      ("Node '%s' missing location "
                                       "attribute '%s'" %
                                       (name, missing_attr),))
-                finally:
-                    node_location_map[node] = loc
 
         # Build index maps:
         #
