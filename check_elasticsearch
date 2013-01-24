@@ -193,6 +193,7 @@ class ElasticSearchCheck(NagiosCheck):
             name_node_map[name] = node
             esid_node_map[n] = node
             node_esid_map[node] = n
+            node_shard_map[node] = []
 
             if len(failure_domain) > 0:
                 node_location_map[node] = tuple()
@@ -253,8 +254,6 @@ class ElasticSearchCheck(NagiosCheck):
                     if s['state'] != 'UNASSIGNED':
                         node = esid_node_map[s['node']]
 
-                        if node not in node_shard_map:
-                            node_shard_map[node] = []
                         node_shard_map[node].append(shard)
 
                         if len(failure_domain) > 0:
