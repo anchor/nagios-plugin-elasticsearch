@@ -1,5 +1,14 @@
+check_elasticsearch
+===================
+
 An [ElasticSearch] availability and performance monitoring plugin for 
 Nagios.
+
+[ElasticSearch]: http://www.elasticsearch.org/
+
+
+How it works
+------------
 
 This plugin works by submitting API requests to a local or remote 
 ElasticSearch server.  ElasticSearch servers will respond to these API 
@@ -26,6 +35,13 @@ colour'.  If our health colour concurs with ElasticSearch's health
 colour, then we can be reasonably sure we know what is wrong with the 
 cluster and may report that problem to the operator.
 
-
-[ElasticSearch]: http://www.elasticsearch.org/
 [cluster-health]: http://www.elasticsearch.org/guide/reference/api/admin-cluster-health.html
+
+
+Requirements
+------------
+
+- Python 2.5 (with simplejson), 2.6, or 2.7
+- [pynagioscheck][]
+
+[pynagioscheck]: https://github.com/saj/pynagioscheck
