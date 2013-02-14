@@ -353,7 +353,7 @@ class ElasticSearchCheck(NagiosCheck):
 
         msg = "Monitoring cluster '%s'" % es_health['cluster_name']
 
-        # Assertion:  Each shard has one primary in STARTED state.
+        # Assertion:  Each shard has one primary in STARTED or RELOCATING state.
         downgraded = False
 
         for idx_name, idx in name_index_map.iteritems():
@@ -364,7 +364,7 @@ class ElasticSearchCheck(NagiosCheck):
                     detail.append("Index '%s' missing primary on "
                                   "shard %d" % (idx_name, shard_no))
                 else:
-                    if primary.state != SHARD_STATE['STARTED']:
+                    if primary.state not in ( SHARD_STATE['STARTED'], SHARD_STATE['RELOCATING''] ):
                         downgraded |= self.downgrade_health(RED)
                         detail.append("Index '%s' primary down on "
                                       "shard %d" % (idx_name, shard_no))
