@@ -324,24 +324,48 @@ class ElasticSearchCheck(NagiosCheck):
                    ["cluster_data_nodes",            n_dnodes],
                    ["cluster_active_shards",         n_active_shards],
                    ["cluster_relocating_shards",     n_relocating_shards],
-                   ["cluster_initialising_shards",
-                    n_initialising_shards],
+                   ["cluster_initialising_shards",   n_initialising_shards],
                    ["cluster_unassigned_shards",     n_unassigned_shards],
                    ["cluster_total_shards",          n_shards]]
 
         other2perfdata(metrics)
 
-        metrics = [["storesize",  'indices.store.size_in_bytes', "B"],
-                   ["documents",  'indices.docs.count'],
-                   ["index_ops",  'indices.indexing.index_total', "c"],
-                   ["index_time", 'indices.indexing.'
-                                  'index_time_in_millis', "c"],
-                   ["query_ops",  'indices.search.query_total', "c"],
-                   ["query_time", 'indices.search.'
-                                  'query_time_in_millis', "c"],
-                   ["flush_ops",  'indices.flush.total', "c"],
-                   ["flush_time", 'indices.flush.'
-                                  'total_time_in_millis', "c"]]
+        metrics = [["storesize",    'indices.store.size_in_bytes', "B"],
+                   ["documents",    'indices.docs.count'],
+                   
+                   ["index_ops",    'indices.indexing.index_total', "c"],
+                   ["index_time",   'indices.indexing.'
+                                    'index_time_in_millis', "c"],
+                   
+                   ["flush_ops",    'indices.flush.total', "c"],
+                   ["flush_time",   'indices.flush.'
+                                    'total_time_in_millis', "c"],
+                   
+                   ["throttle_time", "indices.store.throttle_time_in_millis", "c"],
+                   
+                   ["index_ops",    "indices.indexing.index_total", "c"],
+                   ["index_time",   "indices.indexing.index_time_in_millis", "c"],
+                   ["delete_ops",   "indices.indexing.delete_total", "c"],
+                   ["delete_time",  "indices.indexing.delete_time_in_millis", "c"],
+                   
+                   ["get_ops",      "indices.get.total", "c"],
+                   ["get_time",     "indices.get.time_in_millis", "c"],
+                   ["exists_ops",   "indices.get.exists_total", "c"],
+                   ["exists_time",  "indices.get.exists_time_in_millis", "c"],
+                   ["missing_ops",  "indices.get.missing_total", "c"],
+                   ["missing_time", "indices.get.missing_time_in_millis", "c"],
+                   
+                   ["query_ops",    'indices.search.query_total', "c"],
+                   ["query_time",   'indices.search.query_time_in_millis', "c"],
+                   ["fetch_ops",    "indices.search.fetch_total", "c"],
+                   ["fetch_time",   "indices.search.fetch_time_in_millis", "c"],
+                   
+                   ["merge_ops",    "indices.merges.total", "c"],
+                   ["merge_time",   "indices.merges.time_in_millis", "c"],
+
+                   ["refresh_ops",  "indices.refresh.total", "c"],
+                   ["refresh_time", "indices.refresh.total_time_in_millis", "c"],
+                  ]
 
         dict2perfdata(es_stats['nodes'][myid], metrics)
 
