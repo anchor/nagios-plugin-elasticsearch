@@ -119,7 +119,7 @@ class ElasticSearchCheck(NagiosCheck):
         # Request a bunch of useful numbers that we export as perfdata.  
         # Details like the number of get, search, and indexing 
         # operations come from here.
-        es_stats = get_json(r'http://%s:%d/_cluster/nodes/_local/'
+        es_stats = get_json(r'http://%s:%d/_nodes/_local/'
                              'stats?all=true' % (host, port))
 
         myid = es_stats['nodes'].keys()[0]
