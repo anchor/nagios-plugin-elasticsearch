@@ -76,31 +76,9 @@ class ElasticSearchCheck(NagiosCheck):
                         "The ElasticSearch API should be listening "
                         "here.  Defaults to 9200.")
 
-    def get_es_version(self):
-        es_info = get_json(r'http://%s:%d/' % (self.host, self.port))
-        return es_info["version"]["number"]
-
-    def get_node_stats(self):
-        """
-        Request a bunch of useful numbers that we export as perfdata.  
-        Details like the number of get, search, and indexing 
-        operations come from here.
-        """
-        # This endpoint changed in 1.0.0, so we need to check the 
-        # version.
-        version = self.get_es_version()
-        uri = r'http://%s:%d/%s/_local' % (
-            self.host,
-            self.port,
-            ("_cluster/nodes" if (int(version[0]) < 1) else "_nodes"),
-        )
-        return get_json(uri)
-
     def check(self, opts, args):
         host = opts.host or "localhost"
         port = int(opts.port or '9200')
-        self.host = host
-        self.port = port
 
         failure_domain = []
         if (isinstance(opts.failure_domain, str) and
@@ -138,7 +116,11 @@ class ElasticSearchCheck(NagiosCheck):
         es_state = get_json(r'http://%s:%d/_cluster/state' %
                             (host, port))
 
-        es_stats = self.get_node_stats()
+        # Request a bunch of useful numbers that we export as perfdata.  
+        # Details like the number of get, search, and indexing 
+        # operations come from here.
+        es_stats = get_json(r'http://%s:%d/_cluster/nodes/_local/'
+                             'stats?all=true' % (host, port))
 
         myid = es_stats['nodes'].keys()[0]
 
