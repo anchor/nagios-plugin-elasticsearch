@@ -99,6 +99,11 @@ class ElasticSearchCheck(NagiosCheck):
         # Data retrieval
         #
 
+        # Request "about" info, so we can figure out the ES version,
+        # to allow for version-specific API changes.
+        es_about = get_json(r'http://%s:%d/' % (host, port))
+        es_version = es_about['version']['number']
+
         # Request cluster 'health'.  /_cluster/health is like a tl;dr 
         # for /_cluster/state (see below).  There is very little useful 
         # information here.  We are primarily interested in ES' cluster 
@@ -218,9 +223,14 @@ class ElasticSearchCheck(NagiosCheck):
         indices = es_state['metadata']['indices']
         for i in indices:
             idx_stns = indices[i]['settings']
-            idx = ESIndex(i,
-                          int(idx_stns['index.number_of_shards']),
-                          int(idx_stns['index.number_of_replicas']))
+            if version(es_version) < version("1.0.0"):
+                idx = ESIndex(i,
+                              int(idx_stns['index.number_of_shards']),
+                              int(idx_stns['index.number_of_replicas']))
+            else:
+                idx = ESIndex(i,
+                              int(idx_stns['index']['number_of_shards']),
+                              int(idx_stns['index']['number_of_replicas']))
 
             name_index_map[i] = idx
 
@@ -560,6 +570,11 @@ def get_json(uri):
         raise Status('unknown', ("API returned nonsense",))
 
     return j
+
+def version(version_string):
+    """Accept a typical version string (ex: 1.0.1) and return a tuple
+    of ints, allowing for reasonable comparison."""
+    return tuple([int(i) for i in version_string.split('.')])
 
 if __name__ == '__main__':
     ElasticSearchCheck().run()
