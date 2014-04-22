@@ -37,6 +37,35 @@ cluster and may report that problem to the operator.
 
 [cluster-health]: http://www.elasticsearch.org/guide/reference/api/admin-cluster-health.html
 
+Usage:
+-----
+```
+check_elasticsearch.py [options]
+
+Options:
+  --version             show program's version number and exit
+  -h, --help            show this help message and exit
+  -v, --verbose
+  -f FAILURE_DOMAIN, --failure-domain=FAILURE_DOMAIN
+                        A comma-separated list of ElasticSearch attributes
+                        that make up your cluster's failure domain.  This
+                        should be the same list of attributes that
+                        ElasticSearch's location-aware shard allocator has
+                        been configured with.  If this option is supplied,
+                        additional checks are carried out to ensure that
+                        primary and replica shards are not stored in the same
+                        failure domain.
+  -H HOST, --host=HOST  Hostname or network address to probe.  The
+                        ElasticSearch API should be listening here.  Defaults
+                        to 'localhost'.
+  -m MASTER_NODES, --master-nodes=MASTER_NODES
+                        Issue a warning if the number of master-eligible nodes
+                        in the cluster drops below this number.  By default,
+                        do not monitor the number of nodes in the cluster.
+  -p PORT, --port=PORT  TCP port to probe.  The ElasticSearch API should be
+                        listening here.  Defaults to 9200.
+
+```
 
 Requirements
 ------------
