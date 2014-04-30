@@ -523,7 +523,7 @@ class ElasticSearchCheck(NagiosCheck):
                          perfdata)
 
         raise Status(HEALTH_MAP[self.health],
-                     (msg, None, "%s\n\n%s" % (msg, "\n".join(detail))),
+                     (msg, None, "%s %s" % (msg, " ".join(detail))),
                      perfdata)
 
     def downgrade_health(self, new_health):
