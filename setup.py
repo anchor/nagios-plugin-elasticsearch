@@ -9,6 +9,7 @@ setup(
     packages=find_packages(),
     url="https://github.com/anchor/nagios-plugin-elasticsearch",
     scripts=["check_elasticsearch"],
+    licence="MIT",
     install_requires=[str(req.req) for req in
                           parse_requirements("requirements.txt")],
     include_package_data=True
