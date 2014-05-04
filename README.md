@@ -40,7 +40,7 @@ cluster and may report that problem to the operator.
 Usage:
 -----
 ```
-check_elasticsearch.py [options]
+check_elasticsearch [options]
 
 Options:
   --version             show program's version number and exit
