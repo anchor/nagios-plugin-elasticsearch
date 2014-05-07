@@ -5,7 +5,7 @@ from pip.req import parse_requirements
 
 setup(
     name="nagios-plugin-elasticsearch",
-    version="1.0",
+    version="1.0.0",
     packages=find_packages(),
     url="https://github.com/anchor/nagios-plugin-elasticsearch",
     maintainer="Sharif Olorin",
