@@ -222,6 +222,8 @@ class ElasticSearchCheck(NagiosCheck):
         #
         indices = es_state['metadata']['indices']
         for i in indices:
+            if indices[i]["state"] == "close":
+                continue
             idx_stns = indices[i]['settings']
             if version(es_version) < version("1.0.0"):
                 idx = ESIndex(i,
