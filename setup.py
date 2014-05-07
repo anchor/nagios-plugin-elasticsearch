@@ -8,6 +8,10 @@ setup(
     version="1.0",
     packages=find_packages(),
     url="https://github.com/anchor/nagios-plugin-elasticsearch",
+    maintainer="Sharif Olorin",
+    maintainer_email="sio@tesser.org",
+    author="Saj Goonatilleke",
+    author_email="sg@redu.cx",
     scripts=["check_elasticsearch"],
     license="MIT",
     install_requires=[str(req.req) for req in
