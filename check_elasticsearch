@@ -221,8 +221,11 @@ class ElasticSearchCheck(NagiosCheck):
         #     - name_index_map
         #
         indices = es_state['metadata']['indices']
+        n_indices = len(indices)
+        n_closed_indices = 0
         for i in indices:
             if indices[i]["state"] == "close":
+                n_closed_indices += 1
                 continue
             idx_stns = indices[i]['settings']
             if version(es_version) < version("1.0.0"):
@@ -338,7 +341,9 @@ class ElasticSearchCheck(NagiosCheck):
                    ["cluster_relocating_shards",     n_relocating_shards],
                    ["cluster_initialising_shards",   n_initialising_shards],
                    ["cluster_unassigned_shards",     n_unassigned_shards],
-                   ["cluster_total_shards",          n_shards]]
+                   ["cluster_total_shards",          n_shards],
+                   ["cluster_total_indices",         n_indices],
+                   ["cluster_closed_indices",        n_closed_indices]]
 
         other2perfdata(metrics)
 
