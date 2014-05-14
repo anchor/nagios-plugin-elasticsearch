@@ -41,7 +41,7 @@ Installation
 ------------
 
 `pip install nagios-plugin-elasticsearch` (from
-[PyPi](https://pypi.python.org/pypi/nagios-plugin-elasticsearch/1.0.0).
+[PyPi](https://pypi.python.org/pypi/nagios-plugin-elasticsearch/1.0.0)).
 
 Usage:
 -----
