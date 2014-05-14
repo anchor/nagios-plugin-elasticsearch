@@ -37,6 +37,12 @@ cluster and may report that problem to the operator.
 
 [cluster-health]: http://www.elasticsearch.org/guide/reference/api/admin-cluster-health.html
 
+Installation
+------------
+
+`pip install nagios-plugin-elasticsearch` (from
+[PyPi](https://pypi.python.org/pypi/nagios-plugin-elasticsearch/1.0.0).
+
 Usage:
 -----
 ```
