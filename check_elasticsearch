@@ -43,7 +43,7 @@ class ESNode(object):
         self.attributes = attributes
 
 class ElasticSearchCheck(NagiosCheck):
-    version = '0.2.0'
+    version = '1.0.1'
 
     def __init__(self):
         NagiosCheck.__init__(self)
