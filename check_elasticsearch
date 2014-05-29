@@ -53,13 +53,14 @@ class ElasticSearchCheck(NagiosCheck):
         self.add_option('f', 'failure-domain', 'failure_domain', "A "
                         "comma-separated list of ElasticSearch "
                         "attributes that make up your cluster's "
-                        "failure domain.  This should be the same list "
+                        "failure domain[0].  This should be the same list "
                         "of attributes that ElasticSearch's location-"
                         "aware shard allocator has been configured "
                         "with.  If this option is supplied, additional "
                         "checks are carried out to ensure that primary "
                         "and replica shards are not stored in the same "
-                        "failure domain.")
+                        "failure domain. "
+                        "[0]: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html")
 
         self.add_option('H', 'host', 'host', "Hostname or network "
                         "address to probe.  The ElasticSearch API "
