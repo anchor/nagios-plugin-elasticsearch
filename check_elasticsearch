@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from nagioscheck import NagiosCheck, UsageError
 from nagioscheck import PerformanceMetric, Status
