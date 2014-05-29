@@ -54,13 +54,14 @@ Options:
   -v, --verbose
   -f FAILURE_DOMAIN, --failure-domain=FAILURE_DOMAIN
                         A comma-separated list of ElasticSearch attributes
-                        that make up your cluster's [failure domain](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html).  This
+                        that make up your cluster's failure domain[0].  This
                         should be the same list of attributes that
                         ElasticSearch's location-aware shard allocator has
                         been configured with.  If this option is supplied,
                         additional checks are carried out to ensure that
                         primary and replica shards are not stored in the same
                         failure domain.
+			[0]: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html
   -H HOST, --host=HOST  Hostname or network address to probe.  The
                         ElasticSearch API should be listening here.  Defaults
                         to 'localhost'.
