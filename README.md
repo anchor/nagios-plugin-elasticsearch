@@ -54,7 +54,7 @@ Options:
   -v, --verbose
   -f FAILURE_DOMAIN, --failure-domain=FAILURE_DOMAIN
                         A comma-separated list of ElasticSearch attributes
-                        that make up your cluster's failure domain.  This
+                        that make up your cluster's [failure domain](http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html).  This
                         should be the same list of attributes that
                         ElasticSearch's location-aware shard allocator has
                         been configured with.  If this option is supplied,
