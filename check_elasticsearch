@@ -435,7 +435,7 @@ class ElasticSearchCheck(NagiosCheck):
                                   "shard %d" % (idx_name, shard_no))
 
                 for replica in primary_replica_map[primary]:
-                    if replica.state != SHARD_STATE['STARTED']:
+                    if replica.state not in ( SHARD_STATE['STARTED'], SHARD_STATE['RELOCATING'] ):
                         downgraded |= self.downgrade_health(YELLOW)
                         detail.append("Index '%s' replica down on "
                                       "shard %d" % (idx_name, shard_no))
