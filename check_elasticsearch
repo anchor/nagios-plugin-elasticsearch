@@ -53,29 +53,29 @@ class ElasticSearchCheck(NagiosCheck):
         self.add_option('f', 'failure-domain', 'failure_domain', "A "
                         "comma-separated list of ElasticSearch "
                         "attributes that make up your cluster's "
-                        "failure domain[0].  This should be the same list "
+                        "failure domain[0]. This should be the same list "
                         "of attributes that ElasticSearch's location-"
                         "aware shard allocator has been configured "
-                        "with.  If this option is supplied, additional "
+                        "with. If this option is supplied, additional "
                         "checks are carried out to ensure that primary "
                         "and replica shards are not stored in the same "
                         "failure domain. "
                         "[0]: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html")
 
         self.add_option('H', 'host', 'host', "Hostname or network "
-                        "address to probe.  The ElasticSearch API "
-                        "should be listening here.  Defaults to "
+                        "address to probe. The ElasticSearch API "
+                        "should be listening here. Defaults to "
                         "'localhost'.")
 
         self.add_option('m', 'master-nodes', 'master_nodes', "Issue a "
                         "warning if the number of master-eligible "
                         "nodes in the cluster drops below this "
-                        "number.  By default, do not monitor the "
+                        "number. By default, do not monitor the "
                         "number of nodes in the cluster.")
 
-        self.add_option('p', 'port', 'port', "TCP port to probe.  "
+        self.add_option('p', 'port', 'port', "TCP port to probe. "
                         "The ElasticSearch API should be listening "
-                        "here.  Defaults to 9200.")
+                        "here. Defaults to 9200.")
 
         self.add_option('r', 'prefix', 'prefix', "Optional prefix "
                         "(e.g. 'es') for the ElasticSearch API. "
