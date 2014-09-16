@@ -77,9 +77,16 @@ class ElasticSearchCheck(NagiosCheck):
                         "The ElasticSearch API should be listening "
                         "here.  Defaults to 9200.")
 
+        self.add_option('r', 'prefix', 'prefix', "Optional prefix "
+                        "(e.g. 'es') for the ElasticSearch API. "
+                        "Defaults to ''.")
+
     def check(self, opts, args):
         host = opts.host or "localhost"
         port = int(opts.port or '9200')
+        prefix = opts.prefix or ""
+        if not prefix.endswith('/'):
+            prefix += '/'
 
         failure_domain = []
         if (isinstance(opts.failure_domain, str) and
@@ -102,7 +109,7 @@ class ElasticSearchCheck(NagiosCheck):
 
         # Request "about" info, so we can figure out the ES version,
         # to allow for version-specific API changes.
-        es_about = get_json(r'http://%s:%d/' % (host, port))
+        es_about = get_json(r'http://%s:%d/%s' % (host, port, prefix))
         es_version = es_about['version']['number']
 
         # Request cluster 'health'.  /_cluster/health is like a tl;dr 
@@ -110,8 +117,8 @@ class ElasticSearchCheck(NagiosCheck):
         # information here.  We are primarily interested in ES' cluster 
         # 'health colour':  a little rating ES gives itself to describe 
         # how much pain it is in.
-        es_health = get_json(r'http://%s:%d/_cluster/health' %
-                             (host, port))
+        es_health = get_json(r'http://%s:%d/%s_cluster/health' %
+                             (host, port, prefix))
 
         their_health = HEALTH[es_health['status'].lower()]
 
@@ -119,14 +126,14 @@ class ElasticSearchCheck(NagiosCheck):
         # Here, we can see a list of all nodes, indexes, and shards in 
         # the cluster.  This response will also contain a map detailing 
         # where all shards are living at this point in time.
-        es_state = get_json(r'http://%s:%d/_cluster/state' %
-                            (host, port))
+        es_state = get_json(r'http://%s:%d/%s_cluster/state' %
+                            (host, port, prefix))
 
         # Request a bunch of useful numbers that we export as perfdata.  
         # Details like the number of get, search, and indexing 
         # operations come from here.
-        es_stats = get_json(r'http://%s:%d/_nodes/_local/'
-                             'stats?all=true' % (host, port))
+        es_stats = get_json(r'http://%s:%d/%s_nodes/_local/'
+                             'stats?all=true' % (host, port, prefix))
 
         myid = es_stats['nodes'].keys()[0]
 
