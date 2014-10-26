@@ -56,36 +56,38 @@ class ElasticSearchCheck(NagiosCheck):
 
         self.health = HEALTH['green']
 
-        self.add_option('f', 'failure-domain', 'failure_domain', "A "
-                                                                 "comma-separated list of ElasticSearch "
-                                                                 "attributes that make up your cluster's "
-                                                                 "failure domain[0]. This should be the same list "
-                                                                 "of attributes that ElasticSearch's location-"
-                                                                 "aware shard allocator has been configured "
-                                                                 "with. If this option is supplied, additional "
-                                                                 "checks are carried out to ensure that primary "
-                                                                 "and replica shards are not stored in the same "
-                                                                 "failure domain. "
-                                                                 "[0]: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html")
+        self.add_option('f', 'failure-domain', 'failure_domain',
+                        "A comma-separated list of ElasticSearch "
+                        "attributes that make up your cluster's "
+                        "failure domain[0]. This should be the same list "
+                        "of attributes that ElasticSearch's location-"
+                        "aware shard allocator has been configured "
+                        "with. If this option is supplied, additional "
+                        "checks are carried out to ensure that primary "
+                        "and replica shards are not stored in the same "
+                        "failure domain. "
+                        "[0]: http://www.elasticsearch.org/guide/en/"
+                        "elasticsearch/reference/current/modules-cluster.html")
 
-        self.add_option('H', 'host', 'host', "Hostname or network "
-                                             "address to probe. The ElasticSearch API "
-                                             "should be listening here. Defaults to "
-                                             "'localhost'.")
+        self.add_option('H', 'host', 'host',
+                        "Hostname or network address to probe. "
+                        "The ElasticSearch API should be listening here. "
+                        "Defaults to 'localhost'.")
 
-        self.add_option('m', 'master-nodes', 'master_nodes', "Issue a "
-                                                             "warning if the number of master-eligible "
-                                                             "nodes in the cluster drops below this "
-                                                             "number. By default, do not monitor the "
-                                                             "number of nodes in the cluster.")
+        self.add_option('m', 'master-nodes', 'master_nodes',
+                        "Issue a warning if the number of master-eligible "
+                        "nodes in the cluster drops below this "
+                        "number. By default, do not monitor the "
+                        "number of nodes in the cluster.")
 
-        self.add_option('p', 'port', 'port', "TCP port to probe. "
-                                             "The ElasticSearch API should be listening "
-                                             "here. Defaults to 9200.")
+        self.add_option('p', 'port', 'port',
+                        "TCP port to probe. "
+                        "The ElasticSearch API should be listening "
+                        "here. Defaults to 9200.")
 
-        self.add_option('r', 'prefix', 'prefix', "Optional prefix "
-                                                 "(e.g. 'es') for the ElasticSearch API. "
-                                                 "Defaults to ''.")
+        self.add_option('r', 'prefix', 'prefix',
+                        "Optional prefix (e.g. 'es') for the "
+                        "ElasticSearch API. Defaults to ''.")
 
     def check(self, opts, args):
         host = opts.host or "localhost"
@@ -95,8 +97,9 @@ class ElasticSearchCheck(NagiosCheck):
             prefix += '/'
 
         failure_domain = []
-        if (isinstance(opts.failure_domain, str) and
-                    len(opts.failure_domain) > 0):
+
+        is_failure_domain_str = isinstance(opts.failure_domain, str)
+        if is_failure_domain_str and len(opts.failure_domain) > 0:
             failure_domain.extend(opts.failure_domain.split(","))
 
         if opts.master_nodes is not None:
@@ -107,8 +110,6 @@ class ElasticSearchCheck(NagiosCheck):
             except ValueError:
                 raise UsageError("Argument to -m/--master-nodes must "
                                  "be a natural number")
-
-
         #
         # Data retrieval
         #
@@ -200,8 +201,8 @@ class ElasticSearchCheck(NagiosCheck):
         #
         # - esid_node_map
         # - name_node_map
-        #     - node_esid_map
-        #     - node_location_map (data nodes only)
+        # - node_esid_map
+        # - node_location_map (data nodes only)
         #
         nodes = es_state['nodes']
         for n in nodes:
@@ -232,7 +233,7 @@ class ElasticSearchCheck(NagiosCheck):
 
         # Build index maps:
         #
-        #     - name_index_map
+        # - name_index_map
         #
         indices = es_state['metadata']['indices']
         n_indices = len(indices)
@@ -255,9 +256,9 @@ class ElasticSearchCheck(NagiosCheck):
 
         # Build shard maps:
         #
-        #     - index_primary_map
-        #     - node_shard_map
-        #     - primary_replica_map
+        # - index_primary_map
+        # - node_shard_map
+        # - primary_replica_map
         #     - shard_location_map
         #
         for i in name_index_map:
@@ -394,7 +395,9 @@ class ElasticSearchCheck(NagiosCheck):
             ("refresh_time", "indices.refresh.total_time_in_millis", "ms"),
 
             ("gc_old_count", "jvm.gc.collectors.old.collection_count", "c"),
-            ("gc_young_count", "jvm.gc.collectors.young.collection_count", "c"),
+            (
+                "gc_young_count", "jvm.gc.collectors.young.collection_count",
+                "c"),
             ("heap_used", "jvm.mem.heap_used_percent", "%"),
         )
 
@@ -408,7 +411,8 @@ class ElasticSearchCheck(NagiosCheck):
 
         msg = "Monitoring cluster '%s'" % es_health['cluster_name']
 
-        # Assertion:  Each shard has one primary in STARTED or RELOCATING state.
+        # Assertion:  Each shard has one primary in STARTED or
+        # RELOCATING state.
         downgraded = False
 
         for idx_name, idx in name_index_map.iteritems():
