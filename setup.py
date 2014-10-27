@@ -6,7 +6,7 @@ from pip.req import parse_requirements
 setup(
     name="nagios-plugin-elasticsearch",
     description="An ElasticSearch availability and performance monitoring plugin for Nagios.",
-    version="1.0.2",
+    version="1.0.3",
     packages=find_packages(),
     url="https://github.com/anchor/nagios-plugin-elasticsearch",
     maintainer="Sharif Olorin",

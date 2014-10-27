@@ -1,34 +1,38 @@
 #!/usr/bin/env python
 
+import urllib2
+
 from nagioscheck import NagiosCheck, UsageError
 from nagioscheck import PerformanceMetric, Status
-import urllib2
+
 
 try:
     import json
 except ImportError:
     import simplejson as json
 
-HEALTH = {'red':    0,
+HEALTH = {'red': 0,
           'yellow': 1,
-          'green':  2}
+          'green': 2}
 
-RED    = HEALTH['red']
+RED = HEALTH['red']
 YELLOW = HEALTH['yellow']
-GREEN  = HEALTH['green']
+GREEN = HEALTH['green']
 
 HEALTH_MAP = {0: 'critical',
               1: 'warning',
               2: 'ok'}
 
-SHARD_STATE = {'UNASSIGNED':   1,
+SHARD_STATE = {'UNASSIGNED': 1,
                'INITIALIZING': 2,
-               'STARTED':      3,
-               'RELOCATING':   4}
+               'STARTED': 3,
+               'RELOCATING': 4}
+
 
 class ESShard(object):
     def __init__(self, state):
         self.state = state
+
 
 class ESIndex(object):
     def __init__(self, name, n_shards, n_replicas):
@@ -36,11 +40,13 @@ class ESIndex(object):
         self.n_shards = n_shards
         self.n_replicas = n_replicas
 
+
 class ESNode(object):
     def __init__(self, name=None, esid=None, attributes={}):
         self.esid = esid
         self.name = name
         self.attributes = attributes
+
 
 class ElasticSearchCheck(NagiosCheck):
     version = '1.0.2'
@@ -50,8 +56,8 @@ class ElasticSearchCheck(NagiosCheck):
 
         self.health = HEALTH['green']
 
-        self.add_option('f', 'failure-domain', 'failure_domain', "A "
-                        "comma-separated list of ElasticSearch "
+        self.add_option('f', 'failure-domain', 'failure_domain',
+                        "A comma-separated list of ElasticSearch "
                         "attributes that make up your cluster's "
                         "failure domain[0]. This should be the same list "
                         "of attributes that ElasticSearch's location-"
@@ -60,26 +66,28 @@ class ElasticSearchCheck(NagiosCheck):
                         "checks are carried out to ensure that primary "
                         "and replica shards are not stored in the same "
                         "failure domain. "
-                        "[0]: http://www.elasticsearch.org/guide/en/elasticsearch/reference/current/modules-cluster.html")
+                        "[0]: http://www.elasticsearch.org/guide/en/"
+                        "elasticsearch/reference/current/modules-cluster.html")
 
-        self.add_option('H', 'host', 'host', "Hostname or network "
-                        "address to probe. The ElasticSearch API "
-                        "should be listening here. Defaults to "
-                        "'localhost'.")
+        self.add_option('H', 'host', 'host',
+                        "Hostname or network address to probe. "
+                        "The ElasticSearch API should be listening here. "
+                        "Defaults to 'localhost'.")
 
-        self.add_option('m', 'master-nodes', 'master_nodes', "Issue a "
-                        "warning if the number of master-eligible "
+        self.add_option('m', 'master-nodes', 'master_nodes',
+                        "Issue a warning if the number of master-eligible "
                         "nodes in the cluster drops below this "
                         "number. By default, do not monitor the "
                         "number of nodes in the cluster.")
 
-        self.add_option('p', 'port', 'port', "TCP port to probe. "
+        self.add_option('p', 'port', 'port',
+                        "TCP port to probe. "
                         "The ElasticSearch API should be listening "
                         "here. Defaults to 9200.")
 
-        self.add_option('r', 'prefix', 'prefix', "Optional prefix "
-                        "(e.g. 'es') for the ElasticSearch API. "
-                        "Defaults to ''.")
+        self.add_option('r', 'prefix', 'prefix',
+                        "Optional prefix (e.g. 'es') for the "
+                        "ElasticSearch API. Defaults to ''.")
 
     def check(self, opts, args):
         host = opts.host or "localhost"
@@ -89,8 +97,9 @@ class ElasticSearchCheck(NagiosCheck):
             prefix += '/'
 
         failure_domain = []
-        if (isinstance(opts.failure_domain, str) and
-            len(opts.failure_domain) > 0):
+
+        is_failure_domain_str = isinstance(opts.failure_domain, str)
+        if is_failure_domain_str and len(opts.failure_domain) > 0:
             failure_domain.extend(opts.failure_domain.split(","))
 
         if opts.master_nodes is not None:
@@ -101,8 +110,6 @@ class ElasticSearchCheck(NagiosCheck):
             except ValueError:
                 raise UsageError("Argument to -m/--master-nodes must "
                                  "be a natural number")
-
-
         #
         # Data retrieval
         #
@@ -133,11 +140,11 @@ class ElasticSearchCheck(NagiosCheck):
         # Details like the number of get, search, and indexing 
         # operations come from here.
         es_stats = get_json(r'http://%s:%d/%s_nodes/_local/'
-                             'stats?all=true' % (host, port, prefix))
+                            'stats?all=true' % (host, port, prefix))
 
         myid = es_stats['nodes'].keys()[0]
 
-        n_nodes  = es_health['number_of_nodes']
+        n_nodes = es_health['number_of_nodes']
         n_dnodes = es_health['number_of_data_nodes']
 
         # Unlike n_dnodes (the number of data nodes), we must compute 
@@ -149,16 +156,16 @@ class ElasticSearchCheck(NagiosCheck):
             # ES will never elect 'client' nodes as masters.
             try:
                 master_elig = not (booleanise(
-                                   es_state['nodes'][esid]['attributes']
-                                           ['client']))
+                    es_state['nodes'][esid]['attributes']
+                    ['client']))
             except KeyError, e:
                 if e.args[0] != 'client':
                     raise
 
             try:
                 master_elig = (booleanise(
-                               es_state['nodes'][esid]['attributes']
-                                       ['master']))
+                    es_state['nodes'][esid]['attributes']
+                    ['master']))
             except KeyError, e:
                 if e.args[0] != 'master':
                     raise
@@ -166,10 +173,10 @@ class ElasticSearchCheck(NagiosCheck):
             if master_elig:
                 n_mnodes += 1
 
-        n_active_shards       = es_health['active_shards']
-        n_relocating_shards   = es_health['relocating_shards']
+        n_active_shards = es_health['active_shards']
+        n_relocating_shards = es_health['relocating_shards']
         n_initialising_shards = es_health['initializing_shards']
-        n_unassigned_shards   = es_health['unassigned_shards']
+        n_unassigned_shards = es_health['unassigned_shards']
         n_shards = (n_active_shards + n_relocating_shards +
                     n_initialising_shards + n_unassigned_shards)
 
@@ -180,22 +187,22 @@ class ElasticSearchCheck(NagiosCheck):
         # String all the dumb ES* objects into a bunch of transitive 
         # associations so that we may make some useful assertions about 
         # them.
-        esid_node_map       = {} # ESID       : <ESNode>
-        index_primary_map   = {} # <ESIndex>  : { 0: <ESShard>, ... }
-        name_index_map      = {} # 'bar'      : <ESIndex>
-        name_node_map       = {} # 'foo'      : <ESNode>
-        node_esid_map       = {} # <ESNode>   : ESID
-        node_location_map   = {} # <ESNode>   : ('mars',)
-        node_shard_map      = {} # <ESNode>   : [ <ESShard>, ... ]
-        primary_replica_map = {} # <ESShard>  : [ <ESShard>, ... ]
-        shard_location_map  = {} # <ESShard>  : ('mars',)
+        esid_node_map = {}  # ESID       : <ESNode>
+        index_primary_map = {}  # <ESIndex>  : { 0: <ESShard>, ... }
+        name_index_map = {}  # 'bar'      : <ESIndex>
+        name_node_map = {}  # 'foo'      : <ESNode>
+        node_esid_map = {}  # <ESNode>   : ESID
+        node_location_map = {}  # <ESNode>   : ('mars',)
+        node_shard_map = {}  # <ESNode>   : [ <ESShard>, ... ]
+        primary_replica_map = {}  # <ESShard>  : [ <ESShard>, ... ]
+        shard_location_map = {}  # <ESShard>  : ('mars',)
 
         # Build node maps:
         #
-        #     - esid_node_map
-        #     - name_node_map
-        #     - node_esid_map
-        #     - node_location_map (data nodes only)
+        # - esid_node_map
+        # - name_node_map
+        # - node_esid_map
+        # - node_location_map (data nodes only)
         #
         nodes = es_state['nodes']
         for n in nodes:
@@ -226,7 +233,7 @@ class ElasticSearchCheck(NagiosCheck):
 
         # Build index maps:
         #
-        #     - name_index_map
+        # - name_index_map
         #
         indices = es_state['metadata']['indices']
         n_indices = len(indices)
@@ -249,9 +256,9 @@ class ElasticSearchCheck(NagiosCheck):
 
         # Build shard maps:
         #
-        #     - index_primary_map
-        #     - node_shard_map
-        #     - primary_replica_map
+        # - index_primary_map
+        # - node_shard_map
+        # - primary_replica_map
         #     - shard_location_map
         #
         for i in name_index_map:
@@ -296,23 +303,20 @@ class ElasticSearchCheck(NagiosCheck):
 
         def dict2perfdata(base, metrics):
             for metric in metrics:
-                if len(metric) == 2:
-                    label, path = metric
-                    unit = ""
-                elif len(metric) > 2:
+                try:
                     label, path, unit = metric
-                else:
-                    continue
-
-                keys = path.split(".")
+                except IndexError:
+                    try:
+                        label, path = metric
+                        unit = ''
+                    except IndexError:
+                        continue
 
                 value = base
-                for key in keys:
-                    if value is None:
-                        break
+                for key in path.split("."):
                     try:
                         value = value[key]
-                    except KeyError:
+                    except (KeyError, TypeError):
                         value = None
                         break
 
@@ -342,55 +346,60 @@ class ElasticSearchCheck(NagiosCheck):
         # cluster nodes with this plugin, they should all report the 
         # same figures for these labels.  Not ideal, but 'tis better to 
         # graph this data multiple times than not graph it at all.
-        metrics = [["cluster_nodes",                 n_nodes],
+        metrics = [["cluster_nodes", n_nodes],
                    ["cluster_master_eligible_nodes", n_mnodes],
-                   ["cluster_data_nodes",            n_dnodes],
-                   ["cluster_active_shards",         n_active_shards],
-                   ["cluster_relocating_shards",     n_relocating_shards],
-                   ["cluster_initialising_shards",   n_initialising_shards],
-                   ["cluster_unassigned_shards",     n_unassigned_shards],
-                   ["cluster_total_shards",          n_shards],
-                   ["cluster_total_indices",         n_indices],
-                   ["cluster_closed_indices",        n_closed_indices]]
+                   ["cluster_data_nodes", n_dnodes],
+                   ["cluster_active_shards", n_active_shards],
+                   ["cluster_relocating_shards", n_relocating_shards],
+                   ["cluster_initialising_shards", n_initialising_shards],
+                   ["cluster_unassigned_shards", n_unassigned_shards],
+                   ["cluster_total_shards", n_shards],
+                   ["cluster_total_indices", n_indices],
+                   ["cluster_closed_indices", n_closed_indices]]
 
         other2perfdata(metrics)
 
-        metrics = [["storesize",    'indices.store.size_in_bytes', "B"],
-                   ["documents",    'indices.docs.count'],
-                   
-                   ["index_ops",    'indices.indexing.index_total', "c"],
-                   ["index_time",   'indices.indexing.'
-                                    'index_time_in_millis', "c"],
-                   
-                   ["flush_ops",    'indices.flush.total', "c"],
-                   ["flush_time",   'indices.flush.'
-                                    'total_time_in_millis', "c"],
-                   
-                   ["throttle_time", "indices.store.throttle_time_in_millis", "c"],
-                   
-                   ["index_ops",    "indices.indexing.index_total", "c"],
-                   ["index_time",   "indices.indexing.index_time_in_millis", "c"],
-                   ["delete_ops",   "indices.indexing.delete_total", "c"],
-                   ["delete_time",  "indices.indexing.delete_time_in_millis", "c"],
-                   
-                   ["get_ops",      "indices.get.total", "c"],
-                   ["get_time",     "indices.get.time_in_millis", "c"],
-                   ["exists_ops",   "indices.get.exists_total", "c"],
-                   ["exists_time",  "indices.get.exists_time_in_millis", "c"],
-                   ["missing_ops",  "indices.get.missing_total", "c"],
-                   ["missing_time", "indices.get.missing_time_in_millis", "c"],
-                   
-                   ["query_ops",    'indices.search.query_total', "c"],
-                   ["query_time",   'indices.search.query_time_in_millis', "c"],
-                   ["fetch_ops",    "indices.search.fetch_total", "c"],
-                   ["fetch_time",   "indices.search.fetch_time_in_millis", "c"],
-                   
-                   ["merge_ops",    "indices.merges.total", "c"],
-                   ["merge_time",   "indices.merges.time_in_millis", "c"],
+        metrics = (
+            ("storesize", 'indices.store.size_in_bytes', "B"),
+            ("documents", 'indices.docs.count', "c"),
 
-                   ["refresh_ops",  "indices.refresh.total", "c"],
-                   ["refresh_time", "indices.refresh.total_time_in_millis", "c"],
-                  ]
+            ("index_ops", 'indices.indexing.index_total', "c"),
+            ("index_time", 'indices.indexing.index_time_in_millis', "ms"),
+
+            ("flush_ops", 'indices.flush.total', "c"),
+            ("flush_time", 'indices.flush.total_time_in_millis', "ms"),
+
+            ("throttle_time", "indices.store.throttle_time_in_millis", "ms"),
+
+            ("index_ops", "indices.indexing.index_total", "c"),
+            ("index_time", "indices.indexing.index_time_in_millis", "ms"),
+            ("delete_ops", "indices.indexing.delete_total", "c"),
+            ("delete_time", "indices.indexing.delete_time_in_millis", "ms"),
+
+            ("get_ops", "indices.get.total", "c"),
+            ("get_time", "indices.get.time_in_millis", "ms"),
+            ("exists_ops", "indices.get.exists_total", "c"),
+            ("exists_time", "indices.get.exists_time_in_millis", "ms"),
+            ("missing_ops", "indices.get.missing_total", "c"),
+            ("missing_time", "indices.get.missing_time_in_millis", "ms"),
+
+            ("query_ops", 'indices.search.query_total', "c"),
+            ("query_time", 'indices.search.query_time_in_millis', "ms"),
+            ("fetch_ops", "indices.search.fetch_total", "c"),
+            ("fetch_time", "indices.search.fetch_time_in_millis", "ms"),
+
+            ("merge_ops", "indices.merges.total", "c"),
+            ("merge_time", "indices.merges.time_in_millis", "ms"),
+
+            ("refresh_ops", "indices.refresh.total", "c"),
+            ("refresh_time", "indices.refresh.total_time_in_millis", "ms"),
+
+            ("gc_old_count", "jvm.gc.collectors.old.collection_count", "c"),
+            (
+                "gc_young_count", "jvm.gc.collectors.young.collection_count",
+                "c"),
+            ("heap_used", "jvm.mem.heap_used_percent", "%"),
+        )
 
         dict2perfdata(es_stats['nodes'][myid], metrics)
 
@@ -398,11 +407,12 @@ class ElasticSearchCheck(NagiosCheck):
         # Assertions
         #
 
-        detail = [] # Collect error messages into this list
+        detail = []  # Collect error messages into this list
 
         msg = "Monitoring cluster '%s'" % es_health['cluster_name']
 
-        # Assertion:  Each shard has one primary in STARTED or RELOCATING state.
+        # Assertion:  Each shard has one primary in STARTED or
+        # RELOCATING state.
         downgraded = False
 
         for idx_name, idx in name_index_map.iteritems():
@@ -413,7 +423,9 @@ class ElasticSearchCheck(NagiosCheck):
                     detail.append("Index '%s' missing primary on "
                                   "shard %d" % (idx_name, shard_no))
                 else:
-                    if primary.state not in ( SHARD_STATE['STARTED'], SHARD_STATE['RELOCATING'] ):
+                    if primary.state not in (
+                            SHARD_STATE['STARTED'],
+                            SHARD_STATE['RELOCATING'] ):
                         downgraded |= self.downgrade_health(RED)
                         detail.append("Index '%s' primary down on "
                                       "shard %d" % (idx_name, shard_no))
@@ -442,7 +454,9 @@ class ElasticSearchCheck(NagiosCheck):
                                   "shard %d" % (idx_name, shard_no))
 
                 for replica in primary_replica_map[primary]:
-                    if replica.state not in ( SHARD_STATE['STARTED'], SHARD_STATE['RELOCATING'] ):
+                    if replica.state not in (
+                            SHARD_STATE['STARTED'],
+                            SHARD_STATE['RELOCATING'] ):
                         downgraded |= self.downgrade_health(YELLOW)
                         detail.append("Index '%s' replica down on "
                                       "shard %d" % (idx_name, shard_no))
@@ -547,6 +561,7 @@ class ElasticSearchCheck(NagiosCheck):
             return True
         return False
 
+
 def booleanise(b):
     """Normalise a 'stringified' Boolean to a proper Python Boolean.
 
@@ -565,6 +580,7 @@ def booleanise(b):
         return False
 
     raise ValueError("I don't know how to coerce %r to a bool" % b)
+
 
 def get_json(uri):
     try:
@@ -586,10 +602,12 @@ def get_json(uri):
 
     return j
 
+
 def version(version_string):
     """Accept a typical version string (ex: 1.0.1) and return a tuple
     of ints, allowing for reasonable comparison."""
     return tuple([int(i) for i in version_string.split('.')])
+
 
 if __name__ == '__main__':
     ElasticSearchCheck().run()
