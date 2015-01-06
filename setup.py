@@ -15,7 +15,11 @@ setup(
     author_email="sg@redu.cx",
     scripts=["check_elasticsearch"],
     license="MIT",
-    install_requires=[str(req.req) for req in
-                          parse_requirements("requirements.txt")],
+    install_requires=[
+      'nagioscheck==0.1.6',
+      'simplejson>=3.4.0',
+      'setuptools>=3.4.0',
+      'pip>=1.4' 
+    ],
     include_package_data=True
 )
