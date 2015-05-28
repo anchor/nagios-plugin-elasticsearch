@@ -89,6 +89,9 @@ class ElasticSearchCheck(NagiosCheck):
                         "Optional prefix (e.g. 'es') for the "
                         "ElasticSearch API. Defaults to ''.")
 
+        self.add_option('y', 'yellow-critical', 'yellow_critical',
+                        "Have plugin issue critical alert on yellow cluster state. Defaults to False.")
+
     def check(self, opts, args):
         host = opts.host or "localhost"
         port = int(opts.port or '9200')
@@ -110,6 +113,11 @@ class ElasticSearchCheck(NagiosCheck):
             except ValueError:
                 raise UsageError("Argument to -m/--master-nodes must "
                                  "be a natural number")
+
+        yellow_critical = opts.yellow_critical and opts.yellow_critical.lower() not in ('f', 'false', 'n', 'no')
+        if yellow_critical:
+            HEALTH_MAP[1] = 'critical'
+
         #
         # Data retrieval
         #
