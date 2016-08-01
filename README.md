@@ -85,4 +85,4 @@ Requirements
 - Python 2.5 (with simplejson), 2.6, or 2.7
 - [pynagioscheck][]
 
-[pynagioscheck]: https://github.com/saj/pynagioscheck
+[pynagioscheck]: https://github.com/PeerJ/pynagioscheck
