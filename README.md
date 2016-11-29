@@ -1,3 +1,12 @@
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+This project is no longer maintained.  If you have the time and resources to
+respond to and vet community feedback, please volunteer for a maintainer role by
+posting a message on [this issue][volunteer].
+
+[volunteer]: https://github.com/anchor/nagios-plugin-elasticsearch/issues/48
+
+
 check_elasticsearch
 ===================
 
